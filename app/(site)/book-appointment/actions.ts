@@ -81,6 +81,10 @@ export async function createAppointmentPaymentIntent(formData: FormData) {
         appointment_date: date,
         appointment_time: time,
         appointment_message: message,
+        appointment_price_id: String(price.id),
+        appointment_amount: String(price.amount),
+        appointment_currency: price.currency,
+        appointment_fee: `${price.amount} ${price.currency}`,
       },
     });
 

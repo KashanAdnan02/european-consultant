@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
+import { sendAppointmentNotification } from "@/lib/appointment-email";
 import { getStripe } from "@/lib/stripe";
 
 export const metadata: Metadata = {
@@ -37,6 +38,36 @@ export default async function AppointmentPaymentSuccessPage({
         if (paymentIntent.status === "processing") status = "processing";
         appointmentDate = paymentIntent.metadata.appointment_date ?? "";
         appointmentTime = paymentIntent.metadata.appointment_time ?? "";
+
+        if (
+          status === "paid" &&
+          paymentIntent.metadata.notification_sent !== "true"
+        ) {
+          const metadata = paymentIntent.metadata;
+
+          try {
+            await sendAppointmentNotification({
+              name: metadata.appointment_name ?? "",
+              email: metadata.appointment_email ?? "",
+              whatsapp: metadata.appointment_whatsapp ?? "",
+              date: metadata.appointment_date ?? "",
+              time: metadata.appointment_time ?? "",
+              message: metadata.appointment_message ?? "",
+              priceId: metadata.appointment_price_id ?? "",
+              amount: metadata.appointment_amount ?? "",
+              currency: metadata.appointment_currency ?? "",
+              fee: metadata.appointment_fee ?? "",
+              paymentId: paymentIntent.id,
+              paymentStatus: paymentIntent.status,
+            });
+
+            await getStripe().paymentIntents.update(paymentIntent.id, {
+              metadata: { notification_sent: "true" },
+            });
+          } catch (error) {
+            console.error("Unable to send appointment email:", error);
+          }
+        }
       }
     } catch {
       status = "invalid";
