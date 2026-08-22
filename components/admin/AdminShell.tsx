@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import {
+  CalendarDays,
   Globe,
   LayoutDashboard,
   Menu,
@@ -17,6 +18,12 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/services", label: "Services", icon: Layers, exact: false },
+  {
+    href: "/admin/appointment-services",
+    label: "Appointment Services",
+    icon: CalendarDays,
+    exact: false,
+  },
   { href: "/admin/pricing", label: "Appointment Price", icon: Tag, exact: false },
 ];
 

@@ -1,5 +1,6 @@
 "use server";
 
+import { sendAppointmentNotification } from "@/lib/appointment-email";
 import {
   APPOINTMENT_TIME_SLOTS,
   isPaymentCurrency,
@@ -55,14 +56,11 @@ export async function createAppointmentPaymentIntent(formData: FormData) {
 
   const price = await getAppointmentPrice();
 
-  if (
-    !price ||
-    price.amount <= 0 ||
-    !isPaymentCurrency(price.currency)
-  ) {
+  if (!price || price.amount <= 0 || !isPaymentCurrency(price.currency)) {
     return {
       success: false as const,
-      message: "Online payment is temporarily unavailable. Please try again later.",
+      message:
+        "Online payment is temporarily unavailable. Please try again later.",
       fieldErrors: {},
     };
   }
@@ -80,11 +78,12 @@ export async function createAppointmentPaymentIntent(formData: FormData) {
         appointment_whatsapp: whatsapp,
         appointment_date: date,
         appointment_time: time,
-        appointment_message: message,
+        appointment_message: message.slice(0, 490),
         appointment_price_id: String(price.id),
         appointment_amount: String(price.amount),
         appointment_currency: price.currency,
         appointment_fee: `${price.amount} ${price.currency}`,
+        notification_sent: "false",
       },
     });
 
@@ -105,6 +104,116 @@ export async function createAppointmentPaymentIntent(formData: FormData) {
       success: false as const,
       message: "We could not start the secure payment. Please try again.",
       fieldErrors: {},
+    };
+  }
+}
+
+export async function submitAppointmentAfterPayment(input: {
+  paymentIntentId: string;
+  clientSecret: string;
+}) {
+  const paymentIntentId = input.paymentIntentId.trim();
+  const clientSecret = input.clientSecret.trim();
+
+  if (!paymentIntentId.startsWith("pi_") || !clientSecret) {
+    return {
+      success: false as const,
+      status: "invalid" as const,
+      message: "Missing payment confirmation details.",
+      formSubmitted: false,
+    };
+  }
+
+  try {
+    const paymentIntent =
+      await getStripe().paymentIntents.retrieve(paymentIntentId);
+
+    if (paymentIntent.client_secret !== clientSecret) {
+      return {
+        success: false as const,
+        status: "invalid" as const,
+        message: "Payment could not be verified.",
+        formSubmitted: false,
+      };
+    }
+
+    const appointmentDate = paymentIntent.metadata.appointment_date ?? "";
+    const appointmentTime = paymentIntent.metadata.appointment_time ?? "";
+
+    if (paymentIntent.status === "processing") {
+      return {
+        success: true as const,
+        status: "processing" as const,
+        appointmentDate,
+        appointmentTime,
+        formSubmitted: false,
+        message:
+          "Payment is still processing. Your booking will be submitted after it completes.",
+      };
+    }
+
+    if (paymentIntent.status !== "succeeded") {
+      return {
+        success: false as const,
+        status: "invalid" as const,
+        appointmentDate,
+        appointmentTime,
+        formSubmitted: false,
+        message: "Payment was not completed.",
+      };
+    }
+
+    if (paymentIntent.metadata.notification_sent === "true") {
+      return {
+        success: true as const,
+        status: "paid" as const,
+        appointmentDate,
+        appointmentTime,
+        formSubmitted: true,
+        message: "Appointment booking was already submitted.",
+      };
+    }
+
+    const metadata = paymentIntent.metadata;
+
+    await sendAppointmentNotification({
+      name: metadata.appointment_name ?? "",
+      email: metadata.appointment_email ?? "",
+      whatsapp: metadata.appointment_whatsapp ?? "",
+      date: metadata.appointment_date ?? "",
+      time: metadata.appointment_time ?? "",
+      message: metadata.appointment_message ?? "",
+      priceId: metadata.appointment_price_id ?? "",
+      amount: metadata.appointment_amount ?? "",
+      currency: metadata.appointment_currency ?? "",
+      fee: metadata.appointment_fee ?? "",
+      paymentId: paymentIntent.id,
+      paymentStatus: paymentIntent.status,
+    });
+
+    await getStripe().paymentIntents.update(paymentIntent.id, {
+      metadata: {
+        ...metadata,
+        notification_sent: "true",
+      },
+    });
+
+    return {
+      success: true as const,
+      status: "paid" as const,
+      appointmentDate,
+      appointmentTime,
+      formSubmitted: true,
+      message: "Payment received and appointment form submitted.",
+    };
+  } catch (error) {
+    console.error("Unable to submit appointment after payment:", error);
+    return {
+      success: false as const,
+      status: "invalid" as const,
+      formSubmitted: false,
+      message:
+        "Payment may have succeeded, but we could not submit the booking form. Please contact us with your payment receipt.",
     };
   }
 }

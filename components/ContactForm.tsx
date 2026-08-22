@@ -42,7 +42,7 @@ const SERVICES = [
 export default function ContactForm() {
   return (
     <form
-      action="https://formsubmit.co/fullstackdevkashan@gmail.com"
+      action="https://formsubmit.co/manartanveer@gmail.com"
       method="POST"
       className="w-full min-w-0"
     >

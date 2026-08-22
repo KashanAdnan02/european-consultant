@@ -4,7 +4,10 @@ import {
   type ServiceType,
 } from "@/lib/service-types";
 import { isPaymentCurrency } from "@/lib/payment";
-import type { ServiceInsert } from "@/lib/supabase/database.types";
+import type {
+  AppointmentServiceInsert,
+  ServiceInsert,
+} from "@/lib/supabase/database.types";
 
 export type FieldErrors = Record<string, string>;
 
@@ -113,6 +116,65 @@ export function parseServiceForm(
       document_requirements: documentRequirements,
       process_time: processTime,
       cost,
+      is_published: formData.get("is_published") !== null,
+    },
+  };
+}
+
+export type AppointmentServicePayload = AppointmentServiceInsert;
+
+const MAX_IMAGE_URL = 500;
+const IMAGE_PATH_PATTERN = /^(\/[\w./\- %]+|https?:\/\/.+)$/i;
+
+export function parseAppointmentServiceForm(
+  formData: FormData
+): ValidationResult<AppointmentServicePayload> {
+  const fieldErrors: FieldErrors = {};
+
+  const name = text(formData, "name");
+  const flagImage = text(formData, "flag_image");
+  const description = text(formData, "description");
+  const rawSortOrder = text(formData, "sort_order");
+  const sortOrder = rawSortOrder === "" ? 0 : Number(rawSortOrder);
+
+  if (!name) {
+    fieldErrors.name = "Name is required.";
+  } else if (name.length > MAX_SHORT) {
+    fieldErrors.name = `Name must be under ${MAX_SHORT} characters.`;
+  }
+
+  if (!flagImage) {
+    fieldErrors.flag_image = "Flag image path or URL is required.";
+  } else if (flagImage.length > MAX_IMAGE_URL) {
+    fieldErrors.flag_image = "Image path is too long.";
+  } else if (!IMAGE_PATH_PATTERN.test(flagImage)) {
+    fieldErrors.flag_image =
+      "Use a site path like /images/portugal.webp or a full https URL.";
+  }
+
+  if (!description) {
+    fieldErrors.description = "Short description is required.";
+  } else if (description.length > MAX_CARD_TEXT) {
+    fieldErrors.description = `Description must be under ${MAX_CARD_TEXT} characters.`;
+  }
+
+  if (!Number.isFinite(sortOrder) || !Number.isInteger(sortOrder)) {
+    fieldErrors.sort_order = "Sort order must be a whole number.";
+  } else if (sortOrder < 0 || sortOrder > 10_000) {
+    fieldErrors.sort_order = "Sort order must be between 0 and 10000.";
+  }
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { success: false, fieldErrors };
+  }
+
+  return {
+    success: true,
+    data: {
+      name,
+      flag_image: flagImage,
+      description,
+      sort_order: sortOrder,
       is_published: formData.get("is_published") !== null,
     },
   };

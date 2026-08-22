@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, Clock3, XCircle } from "lucide-react";
-import { sendAppointmentNotification } from "@/lib/appointment-email";
-import { getStripe } from "@/lib/stripe";
+import { submitAppointmentAfterPayment } from "@/app/(site)/book-appointment/actions";
 
 export const metadata: Metadata = {
   title: "Appointment Payment | European Consultant",
@@ -21,62 +20,19 @@ type PageProps = {
 export default async function AppointmentPaymentSuccessPage({
   searchParams,
 }: PageProps) {
-  const paymentIntentId = searchParams.payment_intent;
-  const clientSecret = searchParams.payment_intent_client_secret;
-  let status: "paid" | "processing" | "invalid" = "invalid";
-  let appointmentDate = "";
-  let appointmentTime = "";
+  const result = await submitAppointmentAfterPayment({
+    paymentIntentId: searchParams.payment_intent ?? "",
+    clientSecret: searchParams.payment_intent_client_secret ?? "",
+  });
 
-  if (paymentIntentId?.startsWith("pi_")) {
-    try {
-      const paymentIntent = await getStripe().paymentIntents.retrieve(
-        paymentIntentId
-      );
-
-      if (clientSecret && paymentIntent.client_secret === clientSecret) {
-        if (paymentIntent.status === "succeeded") status = "paid";
-        if (paymentIntent.status === "processing") status = "processing";
-        appointmentDate = paymentIntent.metadata.appointment_date ?? "";
-        appointmentTime = paymentIntent.metadata.appointment_time ?? "";
-
-        if (
-          status === "paid" &&
-          paymentIntent.metadata.notification_sent !== "true"
-        ) {
-          const metadata = paymentIntent.metadata;
-
-          try {
-            await sendAppointmentNotification({
-              name: metadata.appointment_name ?? "",
-              email: metadata.appointment_email ?? "",
-              whatsapp: metadata.appointment_whatsapp ?? "",
-              date: metadata.appointment_date ?? "",
-              time: metadata.appointment_time ?? "",
-              message: metadata.appointment_message ?? "",
-              priceId: metadata.appointment_price_id ?? "",
-              amount: metadata.appointment_amount ?? "",
-              currency: metadata.appointment_currency ?? "",
-              fee: metadata.appointment_fee ?? "",
-              paymentId: paymentIntent.id,
-              paymentStatus: paymentIntent.status,
-            });
-
-            await getStripe().paymentIntents.update(paymentIntent.id, {
-              metadata: { notification_sent: "true" },
-            });
-          } catch (error) {
-            console.error("Unable to send appointment email:", error);
-          }
-        }
-      }
-    } catch {
-      status = "invalid";
-    }
-  }
-
+  const status = result.status ?? "invalid";
   const isPaid = status === "paid";
   const isProcessing = status === "processing";
   const Icon = isPaid ? CheckCircle2 : isProcessing ? Clock3 : XCircle;
+  const appointmentDate =
+    "appointmentDate" in result ? result.appointmentDate : "";
+  const appointmentTime =
+    "appointmentTime" in result ? result.appointmentTime : "";
 
   return (
     <section className="py-16 md:py-24">
@@ -100,10 +56,13 @@ export default async function AppointmentPaymentSuccessPage({
           </h1>
           <p className="mx-auto mt-3 max-w-md text-muted">
             {isPaid
-              ? "Your appointment request and payment were received. A consultant will confirm your slot on WhatsApp."
+              ? result.formSubmitted
+                ? "Your payment was successful and your appointment form has been submitted. A consultant will confirm your slot on WhatsApp."
+                : "Your payment was received. A consultant will confirm your appointment on WhatsApp."
               : isProcessing
-                ? "Your bank is still processing the payment. We will confirm your appointment after it completes."
-                : "We could not verify a successful payment. Return to the booking page and try again."}
+                ? "Your bank is still processing the payment. We will submit your appointment after it completes."
+                : result.message ||
+                  "We could not verify a successful payment. Return to the booking page and try again."}
           </p>
 
           {(isPaid || isProcessing) && (appointmentDate || appointmentTime) && (

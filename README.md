@@ -42,12 +42,12 @@ Then open http://localhost:3000.
 ## Email notifications
 
 Both public forms post directly to
-`https://formsubmit.co/fullstackdevkashan@gmail.com`. FormSubmit sends the
+`https://formsubmit.co/manartanveer@gmail.com`. FormSubmit sends the
 visitor's submitted fields in a table-formatted email. A hidden `_honey` field
 provides basic bot filtering.
 
 FormSubmit sends an activation email the first time a form is submitted. Open
-that message in `fullstackdevkashan@gmail.com` and confirm it before live
+that message in `manartanveer@gmail.com` and confirm it before live
 submissions can be delivered.
 
 ## Admin panel & Supabase setup
@@ -68,8 +68,12 @@ If you already ran an older version of the schema, also run
 | Table | Purpose | Access |
 | --- | --- | --- |
 | `services` | One row per service listing, with title, flag, short text, type, jobs, salary, accommodation, medical & insurance, document requirements, process time and cost | Public read, admin write |
+| `appointment_services` | Visa appointment offices shown on `/appointment` (name, flag image, short description) | Public read published, admin CRUD |
 | `appointment_price` | Single row holding the consultation fee, currency and note | Public read, admin update only |
 | `admins` | Allowlist of user IDs permitted to manage content | Private |
+
+If you already have the base schema, also run
+`supabase/appointment-services.sql` to add the appointment offices table.
 
 ### 2. Add the environment variables
 
@@ -105,6 +109,9 @@ Sign in at `/admin/login`. Accounts that are authenticated but missing from the
 | `/admin/services` | Searchable list of services with edit, preview and delete |
 | `/admin/services/new` | Create a service |
 | `/admin/services/[id]` | Edit or unpublish a service |
+| `/admin/appointment-services` | Manage visa appointment offices shown on `/appointment` |
+| `/admin/appointment-services/new` | Create an appointment office |
+| `/admin/appointment-services/[id]` | Edit or unpublish an appointment office |
 | `/admin/pricing` | Update the appointment price, currency and note |
 
 Each service is published to `/services/<title-slug>`, for example

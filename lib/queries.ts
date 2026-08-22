@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import type {
   AppointmentPriceRow,
+  AppointmentServiceRow,
   ServiceRow,
 } from "@/lib/supabase/database.types";
 
@@ -82,4 +83,46 @@ export function getAppointmentPrice(): Promise<AppointmentPriceRow | null> {
 
     return data ?? null;
   }, null);
+}
+
+export function getAppointmentServices(): Promise<AppointmentServiceRow[]> {
+  return safeQuery(async (supabase) => {
+    const { data } = await supabase
+      .from("appointment_services")
+      .select("*")
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+
+    return data ?? [];
+  }, []);
+}
+
+export function getAppointmentServiceById(
+  id: string
+): Promise<AppointmentServiceRow | null> {
+  return safeQuery(async (supabase) => {
+    const { data } = await supabase
+      .from("appointment_services")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+
+    return data ?? null;
+  }, null);
+}
+
+export function getPublishedAppointmentServices(): Promise<
+  AppointmentServiceRow[]
+> {
+  return safeQuery(async (supabase) => {
+    const { data, error } = await supabase
+      .from("appointment_services")
+      .select("*")
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true })
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+    return data ?? [];
+  }, []);
 }

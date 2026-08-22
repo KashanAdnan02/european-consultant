@@ -10,7 +10,7 @@ import {
 import { loadStripe } from "@stripe/stripe-js";
 import { ChevronDown, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createAppointmentPaymentIntent } from "@/app/(site)/book-appointment/actions";
+import { createAppointmentPaymentIntent, submitAppointmentAfterPayment } from "@/app/(site)/book-appointment/actions";
 import { APPOINTMENT_TIME_SLOTS } from "@/lib/payment";
 
 const FIELD_CLASS =
@@ -101,9 +101,16 @@ function BookingFields({ formattedFee }: { formattedFee: string }) {
     }
 
     if (paymentIntent) {
+      const clientSecret = paymentIntent.client_secret ?? result.clientSecret;
+
+      await submitAppointmentAfterPayment({
+        paymentIntentId: paymentIntent.id,
+        clientSecret,
+      });
+
       const params = new URLSearchParams({
         payment_intent: paymentIntent.id,
-        payment_intent_client_secret: paymentIntent.client_secret ?? "",
+        payment_intent_client_secret: clientSecret,
       });
       router.push(`/book-appointment/success?${params.toString()}`);
       return;

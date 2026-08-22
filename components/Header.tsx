@@ -68,19 +68,19 @@ export default function Header() {
               Contact us
             </span>
             <a
-              href="mailto:manartanver@gmail.com"
+              href="mailto:manartanveer@gmail.com"
               className="contact-marquee-link"
             >
               <Mail size={15} strokeWidth={2.25} aria-hidden="true" />
               <span className="text-white/75">Email</span>
-              <span className="font-semibold">manartanver@gmail.com</span>
+              <span className="font-semibold">manartanveer@gmail.com</span>
             </a>
             <span className="h-4 w-px bg-white/35" aria-hidden="true" />
-            <a href="tel:+4634934829382" className="contact-marquee-link">
+            <a href="tel:+46735534659" className="contact-marquee-link">
               <PhoneCall size={15} strokeWidth={2.25} aria-hidden="true" />
               <span className="text-white/75">Call us</span>
               <span className="font-semibold tracking-wide">
-                +4634934829382
+                +46735534659
               </span>
             </a>
           </div>

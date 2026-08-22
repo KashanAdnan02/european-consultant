@@ -37,6 +37,24 @@ export type AppointmentPriceUpdate = Partial<
   Omit<AppointmentPriceRow, "id" | "updated_at">
 >;
 
+export type AppointmentServiceRow = {
+  id: string;
+  name: string;
+  flag_image: string;
+  description: string;
+  sort_order: number;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AppointmentServiceInsert = Omit<
+  AppointmentServiceRow,
+  "id" | "created_at" | "updated_at"
+>;
+
+export type AppointmentServiceUpdate = Partial<AppointmentServiceInsert>;
+
 export type AdminRow = {
   user_id: string;
   email: string;
@@ -56,6 +74,12 @@ export type Database = {
         Row: AppointmentPriceRow;
         Insert: AppointmentPriceRow;
         Update: AppointmentPriceUpdate;
+        Relationships: [];
+      };
+      appointment_services: {
+        Row: AppointmentServiceRow;
+        Insert: AppointmentServiceInsert;
+        Update: AppointmentServiceUpdate;
         Relationships: [];
       };
       admins: {

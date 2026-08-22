@@ -1,4 +1,4 @@
-const APPOINTMENT_NOTIFY_EMAIL = "fullstackdevkashan@gmail.com";
+const APPOINTMENT_NOTIFY_EMAIL = "manartanveer@gmail.com";
 
 export type AppointmentNotification = {
   name: string;
@@ -27,9 +27,10 @@ export async function sendAppointmentNotification(
         Accept: "application/json",
       },
       body: JSON.stringify({
-        _subject: `New appointment booking — ${appointment.name}`,
+        _subject: `New paid appointment booking — ${appointment.name}`,
         _template: "table",
         _captcha: "false",
+        _replyto: appointment.email,
         name: appointment.name,
         email: appointment.email,
         whatsapp: appointment.whatsapp,
@@ -46,7 +47,11 @@ export async function sendAppointmentNotification(
     }
   );
 
+  const body = await response.text();
+
   if (!response.ok) {
-    throw new Error(`Appointment email failed with status ${response.status}.`);
+    throw new Error(
+      `Appointment email failed with status ${response.status}: ${body}`
+    );
   }
 }
