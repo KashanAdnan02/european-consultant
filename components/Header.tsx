@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Mail, PhoneCall } from "lucide-react";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -57,6 +58,53 @@ export default function Header() {
 
   return (
     <header className="bg-white shadow-[0_2px_12px_rgba(0,0,0,0.06)] sticky top-0 z-[1000]">
+      <div
+        className="contact-marquee relative overflow-hidden border-b border-red-800/40 bg-gradient-to-r from-red-800 via-red-600 to-red-800 py-2.5 text-sm text-white"
+        aria-label="Contact information"
+      >
+        <div className="contact-marquee-track">
+          <div className="contact-marquee-group">
+            <span className="rounded-full border border-white/25 bg-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+              Contact us
+            </span>
+            <a
+              href="mailto:manartanver@gmail.com"
+              className="contact-marquee-link"
+            >
+              <Mail size={15} strokeWidth={2.25} aria-hidden="true" />
+              <span className="text-white/75">Email</span>
+              <span className="font-semibold">manartanver@gmail.com</span>
+            </a>
+            <span className="h-4 w-px bg-white/35" aria-hidden="true" />
+            <a href="tel:+4634934829382" className="contact-marquee-link">
+              <PhoneCall size={15} strokeWidth={2.25} aria-hidden="true" />
+              <span className="text-white/75">Call us</span>
+              <span className="font-semibold tracking-wide">
+                +4634934829382
+              </span>
+            </a>
+          </div>
+          <div className="contact-marquee-group" aria-hidden="true">
+            <span className="rounded-full border border-white/25 bg-white/10 px-3 py-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90">
+              Contact us
+            </span>
+            <span className="contact-marquee-link">
+              <Mail size={15} strokeWidth={2.25} />
+              <span className="text-white/75">Email</span>
+              <span className="font-semibold">manartanver@gmail.com</span>
+            </span>
+            <span className="h-4 w-px bg-white/35" />
+            <span className="contact-marquee-link">
+              <PhoneCall size={15} strokeWidth={2.25} />
+              <span className="text-white/75">Call us</span>
+              <span className="font-semibold tracking-wide">
+                +4634934829382
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
+
       <div className="flex justify-between items-center gap-3 px-4 sm:px-5 py-3 sm:py-4 max-w-6xl mx-auto relative">
         <Link
           href="/"

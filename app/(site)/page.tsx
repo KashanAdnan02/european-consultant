@@ -134,49 +134,6 @@ export default async function HomePage() {
       </section>
 
       {/* STATS */}
-      <section className="pb-16 md:pb-[70px]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 text-center">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
-              >
-                <h3 className="text-3xl sm:text-4xl text-swedenblue font-bold">
-                  {stat.value}
-                </h3>
-                <p className="text-muted text-sm mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* WHY CHOOSE US */}
-      <section className="py-16 md:py-[70px] bg-white">
-        <div className="max-w-6xl mx-auto px-4 sm:px-5">
-          <h2 className="text-3xl md:text-[2.2rem] font-bold text-center mb-4">
-            Why Choose Us
-          </h2>
-          <p className="text-center text-muted max-w-2xl mx-auto mb-11 text-lg">
-            We make your global move simple, transparent, and stress-free.
-          </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {whyChooseUs.map((item) => (
-              <div
-                key={item.title}
-                className="text-center p-6 sm:p-8 bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.05)]"
-              >
-                <div className="text-4xl mb-3">{item.icon}</div>
-                <h4 className="text-lg text-swedenblue mb-1.5 font-semibold">
-                  {item.title}
-                </h4>
-                <p className="text-sm text-muted">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* SERVICES */}
       <section className="py-16 md:py-[70px] scroll-mt-20" id="services">
@@ -223,7 +180,49 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+      <section className="pb-16 md:pb-[70px]">
+        <div className="max-w-6xl mx-auto px-4 sm:px-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-5 text-center">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white p-5 sm:p-6 rounded-xl shadow-[0_4px_16px_rgba(0,0,0,0.06)]"
+              >
+                <h3 className="text-3xl sm:text-4xl text-swedenblue font-bold">
+                  {stat.value}
+                </h3>
+                <p className="text-muted text-sm mt-1">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
+      {/* WHY CHOOSE US */}
+      <section className="py-16 md:py-[70px] bg-white">
+        <div className="max-w-6xl mx-auto px-4 sm:px-5">
+          <h2 className="text-3xl md:text-[2.2rem] font-bold text-center mb-4">
+            Why Choose Us
+          </h2>
+          <p className="text-center text-muted max-w-2xl mx-auto mb-11 text-lg">
+            We make your global move simple, transparent, and stress-free.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            {whyChooseUs.map((item) => (
+              <div
+                key={item.title}
+                className="text-center p-6 sm:p-8 bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.05)]"
+              >
+                <div className="text-4xl mb-3">{item.icon}</div>
+                <h4 className="text-lg text-swedenblue mb-1.5 font-semibold">
+                  {item.title}
+                </h4>
+                <p className="text-sm text-muted">{item.text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
       {/* TESTIMONIALS PREVIEW */}
       <section className="py-16 md:py-[70px] bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-5">
