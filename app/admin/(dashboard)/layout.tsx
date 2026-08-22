@@ -20,8 +20,8 @@ export default async function AdminDashboardLayout({
     return (
       <main className="mx-auto max-w-xl px-4 py-20">
         <Alert tone="info">
-          Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to your environment, run the SQL
+          Supabase is not configured yet. Add SUPABASE_URL and
+          SUPABASE_PUBLISHABLE_KEY to your environment, run the SQL
           in supabase/schema.sql, then restart the server.
         </Alert>
       </main>

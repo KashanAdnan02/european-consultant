@@ -38,8 +38,8 @@ export default function AdminLoginPage({
             <LoginForm next={next} />
           ) : (
             <Alert tone="info">
-              Supabase is not configured yet. Add NEXT_PUBLIC_SUPABASE_URL and
-              NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY to your environment and
+              Supabase is not configured yet. Add SUPABASE_URL and
+              SUPABASE_PUBLISHABLE_KEY to your environment and
               restart the server.
             </Alert>
           )}

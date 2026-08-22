@@ -14,6 +14,7 @@ export const revalidate = 60;
 export default async function BookAppointmentPage() {
   const price = await getAppointmentPrice();
   const hasFee = Boolean(price && price.amount > 0);
+  const stripePublishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
 
   return (
     <div className="animate-fadeIn">
@@ -32,7 +33,11 @@ export default async function BookAppointmentPage() {
       <section className="py-12 md:py-16">
         <div className="mx-auto grid max-w-5xl gap-8 px-4 sm:px-5 lg:grid-cols-[1fr_320px]">
           <div className="min-w-0 rounded-2xl border border-border bg-white p-5 shadow-[0_2px_16px_rgba(0,0,0,0.05)] sm:p-6 md:p-9">
-            <BookingForm />
+            <BookingForm
+              stripePublishableKey={stripePublishableKey}
+              amount={price?.amount}
+              currency={price?.currency}
+            />
           </div>
 
           <aside className="min-w-0 space-y-5">

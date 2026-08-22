@@ -1,35 +1,20 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import {
-  CardCvcElement,
-  CardExpiryElement,
-  CardNumberElement,
   Elements,
+  PaymentElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
-import { loadStripe, type StripeElementChangeEvent } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import { ChevronDown, LockKeyhole } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { createAppointmentPaymentIntent } from "@/app/(site)/book-appointment/actions";
 import { APPOINTMENT_TIME_SLOTS } from "@/lib/payment";
 
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
-
 const FIELD_CLASS =
   "h-12 w-full rounded-lg border bg-white px-4 text-[15px] text-ink outline-none transition placeholder:text-slate-400 focus:border-swedenblue focus:ring-2 focus:ring-swedenblue/15";
-
-const STRIPE_ELEMENT_STYLE = {
-  base: {
-    fontSize: "15px",
-    color: "#1a2634",
-    fontFamily: "Segoe UI, Tahoma, Geneva, Verdana, sans-serif",
-    "::placeholder": { color: "#94a3b8" },
-  },
-  invalid: { color: "#ed1b2f" },
-};
 
 function Label({
   htmlFor,
@@ -50,60 +35,19 @@ function Label({
   );
 }
 
-function StripeField({
-  focused,
-  invalid,
-  children,
-}: {
-  focused: boolean;
-  invalid: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`${FIELD_CLASS} flex items-center ${
-        invalid
-          ? "border-red-400"
-          : focused
-            ? "border-swedenblue ring-2 ring-swedenblue/15"
-            : "border-border"
-      }`}
-    >
-      <div className="w-full">{children}</div>
-    </div>
-  );
-}
-
-function BookingFields() {
+function BookingFields({ formattedFee }: { formattedFee: string }) {
   const stripe = useStripe();
   const elements = useElements();
   const router = useRouter();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState("");
-  const [cardError, setCardError] = useState("");
+  const [paymentError, setPaymentError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [focusedField, setFocusedField] = useState("");
-  const [cardComplete, setCardComplete] = useState({
-    number: false,
-    expiry: false,
-    cvc: false,
-  });
-
-  function handleCardChange(
-    field: "number" | "expiry" | "cvc",
-    event: StripeElementChangeEvent
-  ) {
-    setCardComplete((current) => ({ ...current, [field]: event.complete }));
-    if (event.error) {
-      setCardError(event.error.message);
-      return;
-    }
-    setCardError("");
-  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
+    setPaymentError("");
     setFieldErrors({});
 
     if (!stripe || !elements) {
@@ -111,21 +55,20 @@ function BookingFields() {
       return;
     }
 
-    const cardNumber = elements.getElement(CardNumberElement);
-    if (!cardNumber) {
-      setCardError("Enter your card details to continue.");
-      return;
-    }
-
-    if (!cardComplete.number || !cardComplete.expiry || !cardComplete.cvc) {
-      setCardError("Enter a complete card number, expiry date, and CVC.");
-      return;
-    }
-
     setIsSubmitting(true);
 
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const { error: submitError } = await elements.submit();
+
+    if (submitError) {
+      setPaymentError(
+        submitError.message ?? "Check your payment details and try again."
+      );
+      setIsSubmitting(false);
+      return;
+    }
+
     const result = await createAppointmentPaymentIntent(formData);
 
     if (!result.success) {
@@ -135,22 +78,24 @@ function BookingFields() {
       return;
     }
 
-    const cardholderName = String(formData.get("card_name") ?? "").trim();
-    const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
-      result.clientSecret,
-      {
-        payment_method: {
-          card: cardNumber,
+    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      clientSecret: result.clientSecret,
+      confirmParams: {
+        return_url: `${window.location.origin}/book-appointment/success`,
+        payment_method_data: {
           billing_details: {
-            name: cardholderName,
             email: String(formData.get("email") ?? "").trim(),
           },
         },
-      }
-    );
+      },
+      redirect: "if_required",
+    });
 
     if (stripeError) {
-      setCardError(stripeError.message ?? "Your payment could not be completed.");
+      setPaymentError(
+        stripeError.message ?? "Your payment could not be completed."
+      );
       setIsSubmitting(false);
       return;
     }
@@ -294,91 +239,48 @@ function BookingFields() {
         )}
       </div>
 
-      <div className="border-t border-border pt-6">
-        <div className="mb-4 flex items-center gap-2">
-          <LockKeyhole size={18} className="text-emerald-500" />
-          <h2 className="text-xl font-extrabold text-ink">Card details</h2>
+      <div className="border-t border-border pt-7">
+        <div>
+          <Label htmlFor="appointment_fee">Appointment Fee</Label>
+          <div
+            id="appointment_fee"
+            className="flex h-16 w-full items-center border border-slate-300 bg-white px-5 text-lg font-medium text-ink shadow-sm"
+          >
+            {formattedFee}
+          </div>
         </div>
 
-        <div className="space-y-5">
-          <div>
-            <Label htmlFor="card_name">Name on card</Label>
-            <input
-              id="card_name"
-              name="card_name"
-              type="text"
-              autoComplete="cc-name"
-              placeholder="Name on card"
-              className={`${FIELD_CLASS} border-border`}
-              required
-            />
+        <div className="mt-8">
+          <div className="mb-5 flex items-center gap-2">
+            <LockKeyhole size={20} className="text-emerald-500" />
+            <h2 className="text-xl font-extrabold text-ink">
+              Pay {formattedFee} Fee <span className="text-[#ed1b2f]">*</span>
+            </h2>
           </div>
 
-          <div>
-            <Label>Card number</Label>
-            <StripeField
-              focused={focusedField === "number"}
-              invalid={Boolean(cardError) && !cardComplete.number}
-            >
-              <CardNumberElement
-                options={{
-                  showIcon: true,
-                  placeholder: "ACCT-000015",
-                  style: STRIPE_ELEMENT_STYLE,
-                }}
-                onFocus={() => setFocusedField("number")}
-                onBlur={() => setFocusedField("")}
-                onChange={(event) => handleCardChange("number", event)}
-              />
-            </StripeField>
-          </div>
-
-          <div className="grid gap-5 sm:grid-cols-2">
-            <div className="min-w-0">
-              <Label>Expiry date</Label>
-              <StripeField
-                focused={focusedField === "expiry"}
-                invalid={Boolean(cardError) && !cardComplete.expiry}
-              >
-                <CardExpiryElement
-                  options={{
-                    placeholder: "MM / YY",
-                    style: STRIPE_ELEMENT_STYLE,
-                  }}
-                  onFocus={() => setFocusedField("expiry")}
-                  onBlur={() => setFocusedField("")}
-                  onChange={(event) => handleCardChange("expiry", event)}
-                />
-              </StripeField>
-            </div>
-
-            <div className="min-w-0">
-              <Label>CVC</Label>
-              <StripeField
-                focused={focusedField === "cvc"}
-                invalid={Boolean(cardError) && !cardComplete.cvc}
-              >
-                <CardCvcElement
-                  options={{
-                    placeholder: "CVC",
-                    style: STRIPE_ELEMENT_STYLE,
-                  }}
-                  onFocus={() => setFocusedField("cvc")}
-                  onBlur={() => setFocusedField("")}
-                  onChange={(event) => handleCardChange("cvc", event)}
-                />
-              </StripeField>
-            </div>
-          </div>
+          <PaymentElement
+            options={{
+              layout: {
+                type: "accordion",
+                defaultCollapsed: false,
+                radios: "never",
+                spacedAccordionItems: true,
+              },
+              paymentMethodOrder: ["link", "card"],
+            }}
+            onChange={(event) => {
+              if (event.complete) setPaymentError("");
+            }}
+          />
         </div>
       </div>
 
-      {(formError || cardError) && (
+      {(formError || paymentError) && (
         <p
           role="alert"
           className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
-          {formError || cardError}
+          {formError || paymentError}
         </p>
       )}
 
@@ -387,14 +289,38 @@ function BookingFields() {
         disabled={!stripe || !elements || isSubmitting}
         className="inline-flex h-12 w-full items-center justify-center rounded-full bg-swedenyellow px-8 text-sm font-bold text-ink transition hover:bg-swedenyellowDark hover:shadow-[0_6px_20px_rgba(254,204,2,0.35)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
-        {isSubmitting ? "Processing payment..." : "Pay consultation fee"}
+        {isSubmitting ? "Processing payment..." : `Pay ${formattedFee}`}
       </button>
     </form>
   );
 }
 
-export default function BookingForm() {
-  if (!stripePromise) {
+interface BookingFormProps {
+  stripePublishableKey?: string;
+  amount?: number;
+  currency?: string;
+}
+
+export default function BookingForm({
+  stripePublishableKey,
+  amount,
+  currency,
+}: BookingFormProps) {
+  const stripePromise = useMemo(
+    () =>
+      stripePublishableKey ? loadStripe(stripePublishableKey) : null,
+    [stripePublishableKey]
+  );
+  const formattedFee = useMemo(() => {
+    if (!amount || !currency) return "";
+
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+    }).format(amount);
+  }, [amount, currency]);
+
+  if (!stripePromise || !amount || amount <= 0 || !currency) {
     return (
       <p role="alert" className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
         Secure payment is not configured. Please contact us for assistance.
@@ -403,8 +329,41 @@ export default function BookingForm() {
   }
 
   return (
-    <Elements stripe={stripePromise}>
-      <BookingFields />
+    <Elements
+      stripe={stripePromise}
+      options={{
+        mode: "payment",
+        amount: Math.round(amount * 100),
+        currency: currency.toLowerCase(),
+        appearance: {
+          theme: "stripe",
+          variables: {
+            colorPrimary: "#005293",
+            colorText: "#1a2634",
+            colorDanger: "#ed1b2f",
+            colorBackground: "#ffffff",
+            borderRadius: "2px",
+            fontSizeBase: "16px",
+            spacingUnit: "5px",
+          },
+          rules: {
+            ".Input": {
+              border: "1px solid #cbd5e1",
+              boxShadow: "none",
+              padding: "16px 18px",
+            },
+            ".Input:focus": {
+              border: "1px solid #005293",
+              boxShadow: "0 0 0 2px rgba(0, 82, 147, 0.12)",
+            },
+            ".Label": {
+              fontWeight: "600",
+            },
+          },
+        },
+      }}
+    >
+      <BookingFields formattedFee={formattedFee} />
     </Elements>
   );
 }

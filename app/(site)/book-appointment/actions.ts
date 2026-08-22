@@ -71,7 +71,7 @@ export async function createAppointmentPaymentIntent(formData: FormData) {
     const paymentIntent = await getStripe().paymentIntents.create({
       amount: toMinorUnits(price.amount),
       currency: price.currency.toLowerCase(),
-      payment_method_types: ["card"],
+      automatic_payment_methods: { enabled: true },
       receipt_email: email,
       description: "European Consultant appointment fee",
       metadata: {
