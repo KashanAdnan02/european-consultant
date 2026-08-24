@@ -14,7 +14,7 @@ import {
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { useServerAction } from "@/components/admin/use-server-action";
 import { SERVICE_TYPES } from "@/lib/service-types";
-import type { ServiceRow } from "@/lib/supabase/database.types";
+import type { ServiceRow } from "@/lib/types";
 import { slugify } from "@/lib/utils";
 
 type ServiceFormProps = {

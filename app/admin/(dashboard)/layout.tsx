@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import AdminShell from "@/components/admin/AdminShell";
 import { Alert } from "@/components/admin/ui";
 import { requireAdmin } from "@/lib/auth";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getApiHealth } from "@/lib/queries";
 
 export const metadata: Metadata = {
   title: "Admin Panel | European Consultant",
@@ -16,13 +16,14 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  if (!isSupabaseConfigured) {
+  const apiReady = await getApiHealth();
+  if (!apiReady) {
     return (
       <main className="mx-auto max-w-xl px-4 py-20">
         <Alert tone="info">
-          Supabase is not configured yet. Add SUPABASE_URL and
-          SUPABASE_PUBLISHABLE_KEY to your environment, run the SQL
-          in supabase/schema.sql, then restart the server.
+          The API server is not running. Start MongoDB, then run
+          <code className="mx-1">npm run dev:api</code>
+          and refresh this page.
         </Alert>
       </main>
     );

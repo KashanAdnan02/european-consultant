@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "Client Testimonials | European Consultant",
   description:
     "Real stories from people who trusted European Consultant with their global relocation journey.",
+  alternates: { canonical: "/testimonials" },
 };
 
 const testimonials = [

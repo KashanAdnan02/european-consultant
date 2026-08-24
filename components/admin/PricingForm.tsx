@@ -5,7 +5,7 @@ import { Alert, Card, Field, TextArea, TextInput } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { useServerAction } from "@/components/admin/use-server-action";
 import { PAYMENT_CURRENCIES } from "@/lib/payment";
-import type { AppointmentPriceRow } from "@/lib/supabase/database.types";
+import type { AppointmentPriceRow } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 export default function PricingForm({ price }: { price: AppointmentPriceRow }) {

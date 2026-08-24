@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { ExternalLink, Pencil, Search } from "lucide-react";
 import DeleteAppointmentServiceButton from "@/components/admin/DeleteAppointmentServiceButton";
 import { Badge, TextInput } from "@/components/admin/ui";
-import type { AppointmentServiceRow } from "@/lib/supabase/database.types";
+import type { AppointmentServiceRow } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 export default function AppointmentServicesTable({

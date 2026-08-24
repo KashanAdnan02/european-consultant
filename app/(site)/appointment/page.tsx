@@ -3,12 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronUp, MessageSquare } from "lucide-react";
 import { getPublishedAppointmentServices } from "@/lib/queries";
-import type { AppointmentServiceRow } from "@/lib/supabase/database.types";
+import type { AppointmentServiceRow } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Visa Appointment Services | European Consultant",
   description:
     "Book professional visa appointment assistance for Portugal, Pakistan, Germany, Sweden and more.",
+  alternates: { canonical: "/appointment" },
 };
 
 export const revalidate = 60;

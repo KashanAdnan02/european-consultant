@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "About Us | European Consultant",
   description:
     "Founded in 2025 in Karlstad, Sweden — learn about European Consultant's mission, story, and values.",
+  alternates: { canonical: "/about" },
 };
 
 const values = [

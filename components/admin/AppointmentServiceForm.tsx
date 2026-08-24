@@ -14,7 +14,7 @@ import {
 } from "@/components/admin/ui";
 import { SubmitButton } from "@/components/admin/SubmitButton";
 import { useServerAction } from "@/components/admin/use-server-action";
-import type { AppointmentServiceRow } from "@/lib/supabase/database.types";
+import type { AppointmentServiceRow } from "@/lib/types";
 
 type AppointmentServiceFormProps = {
   service?: AppointmentServiceRow;

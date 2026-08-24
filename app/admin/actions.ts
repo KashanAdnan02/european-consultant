@@ -1,14 +1,17 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { UNAUTHORIZED_STATE, type ActionState } from "@/lib/action-state";
+import { apiFetch } from "@/lib/api";
+import { ADMIN_COOKIE } from "@/lib/api-config";
 import { getSession } from "@/lib/auth";
-import { APPOINTMENT_PRICE_ID } from "@/lib/queries";
-import { createClient } from "@/lib/supabase/server";
-import { parseAppointmentPriceForm, parseAppointmentServiceForm, parseServiceForm } from "@/lib/validation";
-
-const DUPLICATE_SLUG_CODE = "23505";
+import {
+  parseAppointmentPriceForm,
+  parseAppointmentServiceForm,
+  parseServiceForm,
+} from "@/lib/validation";
 
 function revalidateService(slug?: string) {
   revalidatePath("/admin/services");
@@ -19,6 +22,18 @@ function revalidateService(slug?: string) {
 function revalidateAppointmentServices() {
   revalidatePath("/admin/appointment-services");
   revalidatePath("/appointment");
+}
+
+function actionError(data: unknown, fallback: string): ActionState {
+  const body = (data ?? {}) as {
+    message?: string;
+    fieldErrors?: Record<string, string>;
+  };
+  return {
+    status: "error",
+    message: body.message || fallback,
+    fieldErrors: body.fieldErrors,
+  };
 }
 
 export async function createServiceAction(
@@ -37,19 +52,13 @@ export async function createServiceAction(
     };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.from("services").insert(parsed.data);
+  const { data, ok } = await apiFetch("/api/admin/services", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(parsed.data),
+  });
 
-  if (error) {
-    if (error.code === DUPLICATE_SLUG_CODE) {
-      return {
-        status: "error",
-        message: "A service with this title already exists.",
-        fieldErrors: { title: "This title is already used by another service." },
-      };
-    }
-    return { status: "error", message: error.message };
-  }
+  if (!ok) return actionError(data, "Unable to create service.");
 
   revalidateService(parsed.data.slug);
   redirect("/admin/services?created=1");
@@ -76,22 +85,13 @@ export async function updateServiceAction(
     };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("services")
-    .update(parsed.data)
-    .eq("id", id);
+  const { data, ok } = await apiFetch(`/api/admin/services/${id}`, {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(parsed.data),
+  });
 
-  if (error) {
-    if (error.code === DUPLICATE_SLUG_CODE) {
-      return {
-        status: "error",
-        message: "Another service already uses this title.",
-        fieldErrors: { title: "This title is already used by another service." },
-      };
-    }
-    return { status: "error", message: error.message };
-  }
+  if (!ok) return actionError(data, "Unable to update service.");
 
   revalidateService(parsed.data.slug);
   redirect("/admin/services?updated=1");
@@ -109,10 +109,12 @@ export async function deleteServiceAction(
     return { status: "error", message: "Missing service reference." };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.from("services").delete().eq("id", id);
+  const { data, ok } = await apiFetch(`/api/admin/services/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 
-  if (error) return { status: "error", message: error.message };
+  if (!ok) return actionError(data, "Unable to delete service.");
 
   revalidateService();
   redirect("/admin/services?deleted=1");
@@ -134,12 +136,13 @@ export async function createAppointmentServiceAction(
     };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("appointment_services")
-    .insert(parsed.data);
+  const { data, ok } = await apiFetch("/api/admin/appointment-services", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify(parsed.data),
+  });
 
-  if (error) return { status: "error", message: error.message };
+  if (!ok) return actionError(data, "Unable to create appointment office.");
 
   revalidateAppointmentServices();
   redirect("/admin/appointment-services?created=1");
@@ -166,13 +169,13 @@ export async function updateAppointmentServiceAction(
     };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("appointment_services")
-    .update(parsed.data)
-    .eq("id", id);
+  const { data, ok } = await apiFetch(`/api/admin/appointment-services/${id}`, {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(parsed.data),
+  });
 
-  if (error) return { status: "error", message: error.message };
+  if (!ok) return actionError(data, "Unable to update appointment office.");
 
   revalidateAppointmentServices();
   redirect("/admin/appointment-services?updated=1");
@@ -190,13 +193,12 @@ export async function deleteAppointmentServiceAction(
     return { status: "error", message: "Missing appointment service reference." };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("appointment_services")
-    .delete()
-    .eq("id", id);
+  const { data, ok } = await apiFetch(`/api/admin/appointment-services/${id}`, {
+    method: "DELETE",
+    auth: true,
+  });
 
-  if (error) return { status: "error", message: error.message };
+  if (!ok) return actionError(data, "Unable to delete appointment office.");
 
   revalidateAppointmentServices();
   redirect("/admin/appointment-services?deleted=1");
@@ -218,13 +220,13 @@ export async function updateAppointmentPriceAction(
     };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase
-    .from("appointment_price")
-    .update(parsed.data)
-    .eq("id", APPOINTMENT_PRICE_ID);
+  const { data, ok } = await apiFetch("/api/admin/appointment-price", {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(parsed.data),
+  });
 
-  if (error) return { status: "error", message: error.message };
+  if (!ok) return actionError(data, "Unable to update appointment price.");
 
   revalidatePath("/admin/pricing");
   revalidatePath("/admin");
@@ -246,18 +248,34 @@ export async function signInAction(
     return { status: "error", message: "Email and password are required." };
   }
 
-  const supabase = createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, ok } = await apiFetch<{ token?: string; message?: string }>(
+    "/api/auth/login",
+    {
+      method: "POST",
+      revalidate: false,
+      body: JSON.stringify({ email, password }),
+    }
+  );
 
-  if (error) {
-    return { status: "error", message: "Invalid email or password." };
+  if (!ok || !data?.token) {
+    return {
+      status: "error",
+      message: data?.message || "Invalid email or password.",
+    };
   }
+
+  cookies().set(ADMIN_COOKIE, data.token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+  });
 
   redirect(next.startsWith("/admin") ? next : "/admin");
 }
 
 export async function signOutAction() {
-  const supabase = createClient();
-  await supabase.auth.signOut();
+  cookies().delete(ADMIN_COOKIE);
   redirect("/admin/login");
 }

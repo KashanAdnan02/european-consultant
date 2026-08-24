@@ -6,7 +6,7 @@ import { ExternalLink, Pencil, Search } from "lucide-react";
 import DeleteServiceButton from "@/components/admin/DeleteServiceButton";
 import { Badge, TextInput } from "@/components/admin/ui";
 import { serviceTypeLabel } from "@/lib/service-types";
-import type { ServiceRow } from "@/lib/supabase/database.types";
+import type { ServiceRow } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 export default function ServicesTable({

@@ -1,33 +1,21 @@
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { apiFetch } from "@/lib/api";
+import { ADMIN_COOKIE } from "@/lib/api-config";
+import type { AdminSession } from "@/lib/types";
 
-export type AdminSession = {
-  userId: string;
-  email: string;
-  isAdmin: boolean;
-};
+export type { AdminSession };
 
 export async function getSession(): Promise<AdminSession | null> {
-  const supabase = createClient();
+  const token = cookies().get(ADMIN_COOKIE)?.value;
+  if (!token) return null;
 
   try {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) return null;
-
-    const { data: admin } = await supabase
-      .from("admins")
-      .select("user_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    return {
-      userId: user.id,
-      email: user.email ?? "",
-      isAdmin: Boolean(admin),
-    };
+    const { data, ok } = await apiFetch<AdminSession>("/api/auth/me", {
+      auth: true,
+      revalidate: false,
+    });
+    return ok ? data : null;
   } catch {
     return null;
   }

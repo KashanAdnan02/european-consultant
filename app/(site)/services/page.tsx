@@ -2,12 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPublishedServices } from "@/lib/queries";
 import { groupServicesByType } from "@/lib/service-types";
-import type { ServiceRow } from "@/lib/supabase/database.types";
+import type { ServiceRow } from "@/lib/types";
 
 export const metadata: Metadata = {
   title: "Our Services | European Consultant",
   description:
     "Work permits, tourist visas, business invitations & company formations worldwide — 40+ countries covered.",
+  alternates: { canonical: "/services" },
 };
 
 export const revalidate = 60;

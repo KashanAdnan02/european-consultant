@@ -7,7 +7,7 @@ import { isPaymentCurrency } from "@/lib/payment";
 import type {
   AppointmentServiceInsert,
   ServiceInsert,
-} from "@/lib/supabase/database.types";
+} from "@/lib/types";
 
 export type FieldErrors = Record<string, string>;
 

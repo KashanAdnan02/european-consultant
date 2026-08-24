@@ -1,33 +1,21 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { updateSession } from "@/lib/supabase/middleware";
+import { ADMIN_COOKIE } from "@/lib/api-config";
 
 const LOGIN_PATH = "/admin/login";
 
-export async function middleware(request: NextRequest) {
-  if (!isSupabaseConfigured) {
-    return NextResponse.next();
-  }
-
-  const { response, user } = await updateSession(request);
+export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
+  const token = request.cookies.get(ADMIN_COOKIE)?.value;
   const isLoginRoute = pathname === LOGIN_PATH;
 
-  if (!user && !isLoginRoute) {
+  if (!token && !isLoginRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = LOGIN_PATH;
     redirectUrl.search = `?next=${encodeURIComponent(`${pathname}${search}`)}`;
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && isLoginRoute) {
-    const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/admin";
-    redirectUrl.search = "";
-    return NextResponse.redirect(redirectUrl);
-  }
-
-  return response;
+  return NextResponse.next();
 }
 
 export const config = {

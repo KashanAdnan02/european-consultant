@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   title: "Book an Appointment | European Consultant",
   description:
     "Book a consultation with European Consultant for work permits, tourist visas and relocation support.",
+  alternates: { canonical: "/book-appointment" },
 };
 
 export const revalidate = 60;

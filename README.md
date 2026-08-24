@@ -31,75 +31,65 @@ Next.js 14 (App Router) + TypeScript + Tailwind project.
 
 ## Getting started
 
+1. Copy env files:
+   - `.env.example` → `.env` (Next.js website)
+   - `server/.env.example` → `server/.env` (Node API / production)
+2. Install dependencies: `npm install`
+3. Run the two apps in **separate terminals**:
+
 ```bash
-npm install
-cp .env.local.example .env.local
+# Terminal 1 — API (MongoDB + Stripe + admin auth)
+npm run dev:api
+
+# Terminal 2 — Next.js website
 npm run dev
 ```
 
-Then open http://localhost:3000.
+Website: http://localhost:3000  
+API: http://localhost:4000 (or the `PORT` in `server/.env`)
+
+On first API start it creates the admin user from `ADMIN_EMAIL` / `ADMIN_PASSWORD`
+in `server/.env`. Sign in at `/admin/login` with those credentials.
 
 ## Email notifications
 
-Both public forms post directly to
-`https://formsubmit.co/manartanveer@gmail.com`. FormSubmit sends the
-visitor's submitted fields in a table-formatted email. A hidden `_honey` field
-provides basic bot filtering.
+The contact form posts directly to
+`https://formsubmit.co/manartanveer@gmail.com`. Paid appointment bookings are
+confirmed by the Node API, stored in MongoDB, then emailed through FormSubmit.
 
 FormSubmit sends an activation email the first time a form is submitted. Open
 that message in `manartanveer@gmail.com` and confirm it before live
 submissions can be delivered.
 
-## Admin panel & Supabase setup
+## Admin panel & MongoDB
 
-The admin panel lives at `/admin` and is protected by Supabase Auth. Services
-and the appointment price are stored in Supabase with row level security, so
-only accounts listed in the `admins` table can write to them.
+The admin panel lives at `/admin`. Email and password are stored in MongoDB
+(hashed). Services, appointment offices, appointment prices, and paid bookings
+are also stored there. Stripe PaymentIntents are created on the Node server so
+the secret key never reaches the browser.
 
-### 1. Create the database objects
+### Environment variables
 
-In the Supabase dashboard open **SQL Editor** and run the contents of
-`supabase/schema.sql`. This creates:
-
-If you already ran an older version of the schema, also run
-`supabase/add-service-fields.sql` to add the listing fields (`title`, `flag`,
-`text`, `type`).
-
-| Table | Purpose | Access |
-| --- | --- | --- |
-| `services` | One row per service listing, with title, flag, short text, type, jobs, salary, accommodation, medical & insurance, document requirements, process time and cost | Public read, admin write |
-| `appointment_services` | Visa appointment offices shown on `/appointment` (name, flag image, short description) | Public read published, admin CRUD |
-| `appointment_price` | Single row holding the consultation fee, currency and note | Public read, admin update only |
-| `admins` | Allowlist of user IDs permitted to manage content | Private |
-
-If you already have the base schema, also run
-`supabase/appointment-services.sql` to add the appointment offices table.
-
-### 2. Add the environment variables
-
-Copy the project URL and publishable key from **Project Settings → API Keys**
-into `.env.local`:
+**Website** (`.env`):
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_your-key
+API_URL=http://localhost:4000
+SITE_URL=http://localhost:3000
+STRIPE_PUBLISHABLE_KEY=pk_...
 ```
 
-Older Supabase projects call this the anon key. Both names are supported —
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` is used as a fallback if the publishable key is
-not set. Never put the service role or secret key in a `NEXT_PUBLIC_` variable.
+**API** (`server/.env` — used in production):
 
-Add the same two variables to your hosting provider before deploying.
-
-### 3. Create the admin account
-
-1. In Supabase go to **Authentication → Users → Add user**, set an email and
-   password, and confirm the user.
-2. Open **SQL Editor** and run `supabase/grant-admin.sql`, replacing
-   `admin@example.com` with the email you just created.
-
-Sign in at `/admin/login`. Accounts that are authenticated but missing from the
-`admins` table land on `/admin/no-access` and cannot read or write content.
+```
+PORT=4000
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=a-long-random-string
+ADMIN_EMAIL=admin@europeanconsultant.com
+ADMIN_PASSWORD=your-password
+SITE_URL=http://localhost:3000
+STRIPE_SECRET_KEY=sk_...
+APPOINTMENT_NOTIFY_EMAIL=you@example.com
+```
 
 ### Admin routes
 
@@ -122,43 +112,35 @@ every service page.
 
 ## Build for production
 
+Deploy the API and website separately.
+
 ```bash
+# Website
 npm run build
 npm run start
+
+# API (on your Node host)
+npm run start:api
 ```
+
+Set production values in `server/.env` on the API host, and point the website
+`API_URL` at that public API URL. The website is server-rendered for SEO
+(`sitemap.xml`, `robots.txt`, Open Graph tags, and JSON-LD).
 
 ## Project structure
 
 ```
+server/                         # Express + MongoDB API
+  index.js                      # HTTP server
+  models/                       # Admin, services, prices, bookings
+  routes/                       # Auth, public reads, admin CRUD, Stripe
 app/
-  layout.tsx                    # Root layout — html/body, viewport and global styles
-  globals.css
+  layout.tsx                    # Root layout, SEO metadata, JSON-LD
+  sitemap.ts  robots.ts
   (site)/                       # Public website, wrapped in Header/Footer
-    layout.tsx
-    page.tsx                    # Home
-    about/ services/ testimonials/ contact/ thank-you/
-    appointment/ book-appointment/
-    services/[slug]/page.tsx    # Service detail, rendered from Supabase
-  admin/
-    actions.ts                  # Server actions: CRUD, pricing, auth
-    login/page.tsx
-    no-access/page.tsx
-    (dashboard)/                # Protected admin shell
-      layout.tsx
-      page.tsx                  # Dashboard
-      services/                 # List, create, edit
-      pricing/page.tsx
-components/
-  Header.tsx  Footer.tsx  ContactForm.tsx  BookingForm.tsx
-  admin/                        # Admin shell, forms, table and UI primitives
+  admin/                        # Admin panel (JWT cookie + API)
 lib/
-  auth.ts                       # Session and admin guards
-  queries.ts                    # Read helpers for services and pricing
-  validation.ts                 # Form parsing and validation
-  utils.ts                      # Slug, price and date formatting
-  supabase/                     # Browser, server and middleware clients
-middleware.ts                   # Refreshes the session, gates /admin
-supabase/
-  schema.sql                    # Tables, triggers and RLS policies
-  grant-admin.sql               # Grants admin access to an existing user
+  api.ts                        # Next.js client for the Node API
+  auth.ts  queries.ts  validation.ts
+middleware.ts                   # Gates /admin behind the JWT cookie
 ```

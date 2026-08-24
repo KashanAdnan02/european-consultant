@@ -73,7 +73,7 @@ function BookingFields({ formattedFee }: { formattedFee: string }) {
 
     if (!result.success) {
       setFormError(result.message);
-      setFieldErrors(result.fieldErrors);
+      setFieldErrors(result.fieldErrors ?? {});
       setIsSubmitting(false);
       return;
     }

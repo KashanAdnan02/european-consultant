@@ -1,6 +1,14 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { getPublishedServices } from "@/lib/queries";
 import { groupServicesByType } from "@/lib/service-types";
+
+export const metadata: Metadata = {
+  title: "European Consultant – Visa & Relocation Services",
+  description:
+    "Your trusted visa, HR and relocation partner based in Sweden, covering work permits, tourist visas and company formation in 40+ countries.",
+  alternates: { canonical: "/" },
+};
 
 export const revalidate = 60;
 

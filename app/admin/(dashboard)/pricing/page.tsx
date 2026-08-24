@@ -16,8 +16,8 @@ export default async function AdminPricingPage() {
         <PricingForm price={price} />
       ) : (
         <Alert tone="info">
-          The appointment price record was not found. Run the SQL in
-          supabase/schema.sql to create it.
+          The appointment price record was not found. Start the API so it can
+          create the default price, then refresh.
         </Alert>
       )}
     </>

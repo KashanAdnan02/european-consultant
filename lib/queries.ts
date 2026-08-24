@@ -1,128 +1,114 @@
-import { createClient } from "@/lib/supabase/server";
-import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { apiFetch } from "@/lib/api";
 import type {
   AppointmentPriceRow,
   AppointmentServiceRow,
   ServiceRow,
-} from "@/lib/supabase/database.types";
+} from "@/lib/types";
 
 export const APPOINTMENT_PRICE_ID = 1;
 
-async function safeQuery<T>(
-  run: (client: ReturnType<typeof createClient>) => Promise<T>,
-  fallback: T
-): Promise<T> {
-  if (!isSupabaseConfigured) return fallback;
-
+export async function getServices(): Promise<ServiceRow[]> {
   try {
-    return await run(createClient());
+    const { data, ok } = await apiFetch<ServiceRow[]>("/api/admin/services", {
+      auth: true,
+    });
+    return ok && Array.isArray(data) ? data : [];
   } catch {
-    return fallback;
+    return [];
   }
 }
 
-export function getServices(): Promise<ServiceRow[]> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("services")
-      .select("*")
-      .order("country", { ascending: true });
-
-    return data ?? [];
-  }, []);
+export async function getServiceById(id: string): Promise<ServiceRow | null> {
+  try {
+    const { data, ok } = await apiFetch<ServiceRow | null>(
+      `/api/admin/services/${id}`,
+      { auth: true }
+    );
+    return ok ? data : null;
+  } catch {
+    return null;
+  }
 }
 
-export function getServiceById(id: string): Promise<ServiceRow | null> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("services")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    return data ?? null;
-  }, null);
-}
-
-export function getPublishedServiceBySlug(
+export async function getPublishedServiceBySlug(
   slug: string
 ): Promise<ServiceRow | null> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("services")
-      .select("*")
-      .eq("slug", slug)
-      .eq("is_published", true)
-      .maybeSingle();
-
-    return data ?? null;
-  }, null);
+  try {
+    const { data, ok } = await apiFetch<ServiceRow | null>(
+      `/api/public/services/${encodeURIComponent(slug)}`
+    );
+    return ok ? data : null;
+  } catch {
+    return null;
+  }
 }
 
-export function getPublishedServices(): Promise<ServiceRow[]> {
-  return safeQuery(async (supabase) => {
-    const { data, error } = await supabase
-      .from("services")
-      .select("*")
-      .eq("is_published", true)
-      .order("type", { ascending: true })
-      .order("title", { ascending: true });
-
-    if (error) throw error;
-    return data ?? [];
-  }, []);
+export async function getPublishedServices(): Promise<ServiceRow[]> {
+  try {
+    const { data, ok } = await apiFetch<ServiceRow[]>("/api/public/services");
+    return ok && Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
-export function getAppointmentPrice(): Promise<AppointmentPriceRow | null> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("appointment_price")
-      .select("*")
-      .eq("id", APPOINTMENT_PRICE_ID)
-      .maybeSingle();
-
-    return data ?? null;
-  }, null);
+export async function getAppointmentPrice(): Promise<AppointmentPriceRow | null> {
+  try {
+    const { data, ok } = await apiFetch<AppointmentPriceRow | null>(
+      "/api/public/appointment-price"
+    );
+    return ok ? data : null;
+  } catch {
+    return null;
+  }
 }
 
-export function getAppointmentServices(): Promise<AppointmentServiceRow[]> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("appointment_services")
-      .select("*")
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true });
-
-    return data ?? [];
-  }, []);
+export async function getAppointmentServices(): Promise<AppointmentServiceRow[]> {
+  try {
+    const { data, ok } = await apiFetch<AppointmentServiceRow[]>(
+      "/api/admin/appointment-services",
+      { auth: true }
+    );
+    return ok && Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
 }
 
-export function getAppointmentServiceById(
+export async function getAppointmentServiceById(
   id: string
 ): Promise<AppointmentServiceRow | null> {
-  return safeQuery(async (supabase) => {
-    const { data } = await supabase
-      .from("appointment_services")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-
-    return data ?? null;
-  }, null);
+  try {
+    const { data, ok } = await apiFetch<AppointmentServiceRow | null>(
+      `/api/admin/appointment-services/${id}`,
+      { auth: true }
+    );
+    return ok ? data : null;
+  } catch {
+    return null;
+  }
 }
 
-export function getPublishedAppointmentServices(): Promise<
+export async function getPublishedAppointmentServices(): Promise<
   AppointmentServiceRow[]
 > {
-  return safeQuery(async (supabase) => {
-    const { data, error } = await supabase
-      .from("appointment_services")
-      .select("*")
-      .eq("is_published", true)
-      .order("sort_order", { ascending: true })
-      .order("name", { ascending: true });
+  try {
+    const { data, ok } = await apiFetch<AppointmentServiceRow[]>(
+      "/api/public/appointment-services"
+    );
+    return ok && Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
 
-    if (error) throw error;
-    return data ?? [];
-  }, []);
+export async function getApiHealth(): Promise<boolean> {
+  try {
+    const { ok } = await apiFetch<{ ok: boolean }>("/api/health", {
+      revalidate: false,
+    });
+    return ok;
+  } catch {
+    return false;
+  }
 }

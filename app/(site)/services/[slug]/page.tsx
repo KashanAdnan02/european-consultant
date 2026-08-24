@@ -1,13 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getAppointmentPrice, getPublishedServiceBySlug } from "@/lib/queries";
+import { getAppointmentPrice, getPublishedServiceBySlug, getPublishedServices } from "@/lib/queries";
 import { serviceTypeLabel } from "@/lib/service-types";
-import type { ServiceRow } from "@/lib/supabase/database.types";
+import type { ServiceRow } from "@/lib/types";
 import { formatPrice, slugify } from "@/lib/utils";
 
 export const revalidate = 60;
+export const dynamicParams = true;
 
 type PageProps = { params: { slug: string } };
+
+export async function generateStaticParams() {
+  const services = await getPublishedServices();
+  return services
+    .filter((service) => service.slug)
+    .map((service) => ({ slug: service.slug }));
+}
 
 const DETAIL_SECTIONS: Array<{ key: keyof ServiceRow; label: string }> = [
   { key: "jobs", label: "Jobs" },
@@ -39,6 +47,16 @@ export async function generateMetadata({
     description: service
       ? `${displayTitle} — ${service.text || "jobs, salary, accommodation, documents, process time and cost."}`
       : `Visa and relocation guidance for ${displayTitle} from European Consultant.`,
+    alternates: {
+      canonical: `/services/${slugify(params.slug)}`,
+    },
+    openGraph: {
+      title: `${displayTitle} | European Consultant`,
+      description: service
+        ? `${displayTitle} — ${service.text || "visa and relocation support."}`
+        : `Visa and relocation guidance for ${displayTitle}.`,
+      type: "article",
+    },
   };
 }
 
